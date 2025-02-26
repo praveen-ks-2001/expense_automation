@@ -58,11 +58,11 @@ async def log_expense(update: Update, context: CallbackContext) -> None:
         # Handle ".recent <sheet_name> <count>" command
         elif text.lower().startswith(".recent"):
             parts = text.split()
-            if len(parts) != 3:
+            if len(parts) < 2:
                 raise ValueError("Invalid .recent command format")
 
             sheet_name = parts[1]
-            n = int(parts[2])  # Convert count to an integer
+            n = int(parts[2]) if len(parts) == 3 else 5  # Default to 5 transactions
 
             # Open the specified sheet
             worksheet = client.open(file_name).worksheet(sheet_name)
@@ -75,11 +75,12 @@ async def log_expense(update: Update, context: CallbackContext) -> None:
             else:
                 msg = f"🔹 **Last {n} Transactions in '{sheet_name}':**\n"
                 for entry in reversed(transactions):  # Reverse for latest-first order
-                    date = (entry[0] if len(entry) > 0 else "-").ljust(12)  # Pad to 12 chars
-                    amount = (entry[1] if len(entry) > 1 else "-").ljust(12)  # Pad to 12 chars
+                    date = (entry[0] if len(entry) > 0 else "-")  # Pad to 12 chars
+                    amount = (entry[1] if len(entry) > 1 else "-")  # Pad to 12 chars
                     description = entry[2] if len(entry) > 2 else "-"  # No padding for description
 
-                    msg += f" {date} | {amount} | {description}\n"
+                    msg += f"{date:<12} | {amount:<12} | {description}\n"
+
 
         # Handle normal expense logging
         else:
@@ -109,7 +110,7 @@ async def log_expense(update: Update, context: CallbackContext) -> None:
         msg = f"❌ Sheet '{sheet_name}' not found. Please check the name."
 
     except ValueError:
-        msg = "❌ Invalid format. Please use: `.recent sheet_name count`"
+        msg = "❌ Invalid format. Use: `.recent <sheet_name> <count>` (e.g., `.recent SBI 10`)"
 
     except Exception as e:
         msg = f"❌ Error: {str(e)}"
