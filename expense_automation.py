@@ -4,6 +4,10 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, CallbackContext
+import datetime
+import pytz
+
+IST = pytz.timezone('Asia/Kolkata')
 
 SHEET_NAME = "Bank Transfers 2025"
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
@@ -31,9 +35,20 @@ async def log_expense(update: Update, context: CallbackContext) -> None:
         # Append data to Google Sheet
         sheet.append_row([update.message.date.strftime("%Y-%m-%d"), source.strip(), amount, category.strip()])
         
-        await update.message.reply_text(f"✅ Expense Logged: {source} spent {amount} on {category}")  # ✅ Await added
-    except Exception as e:
-        await update.message.reply_text("❌ Invalid format. Please use: `source,amount,category`")  # ✅ Await added
+        msg = f"✅ Expense Logged: {source} spent {amount} on {category}"
+        
+        now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+        print(f"{now}: {msg}")
+        
+        await update.message.reply_text(msg)  # ✅ Await added
+    
+    except Exception:
+        msg = "❌ Invalid format. Please use: `source,amount,category`"
+
+        now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+        print(f"{now}: {msg}")
+
+        await update.message.reply_text(msg)  # ✅ Await added
 
 
 def main():
