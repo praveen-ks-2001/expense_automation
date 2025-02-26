@@ -1,3 +1,7 @@
 1. DONE: pass sheet name as a parameter
-2. fix col from which to start appending data
+2. DONE: fix col from which to start appending data
 3. DONE: give '.sheet' to get all the sheets name
+4. DONE: fetch last 5 txn of the sheet
+5. add .info to tell how to use the bot
+6. DONE: Fix date formatiing - not doing since formatting changes are minor and not imp
+7. add functionality for long msgs

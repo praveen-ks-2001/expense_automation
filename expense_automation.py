@@ -24,50 +24,98 @@ with open("other_creds.json", "r") as file:
 BOT_TOKEN = other_creds['access_token_telegram_bot']
 
 
+# Function to get the last N transactions from a sheet
+def get_last_n_transactions(worksheet, n):
+    col_b_values = worksheet.col_values(2)  # Fetch all values from column B (dates)
+    last_row = len(col_b_values)  # Last filled row index
+    
+    if last_row < 2:  # Assuming row 1 is headers
+        return []
+
+    start_row = max(2, last_row - n + 1)  # Ensure we don't go below row 2
+    return worksheet.get(f"B{start_row}:D{last_row}")  # Fetch last N rows from columns B, C, and D
+
+
+
+# Function to get the last filled row in column B
+def get_last_row(worksheet):
+    col_b_values = worksheet.col_values(2)  # Fetch all values from column B
+    return len(col_b_values) + 1  # Return the next available row
+
+
 # Function to handle incoming messages
 async def log_expense(update: Update, context: CallbackContext) -> None:
     text = update.message.text.strip()
-    print(f"Text received: '{text}'")
+    print(f"Text received: '{text}'")  # Debug log
 
-    # If user sends '/sheet', return available sheet names
-    if text.lower() == ".sheet":
-        try:
+    try:
+        # Handle ".sheet" command to list available sheets
+        if text.lower() == ".sheet":
             sheet = client.open(file_name)
-            print(1)
             sheet_names = [ws.title for ws in sheet.worksheets()]
-            print(2)
-            msg = "📄 Available Sheets:\n" + "\n".join(sheet_names)
-            print(3)
-        except Exception as e:
-            msg = f"❌ Error fetching sheets: {str(e)}"
+            msg = "📄 **Available Sheets:**\n" + "\n".join(sheet_names)
 
-    else:
-        try:
-            sheet_name, amount, description = text.split(",")
-            amount = float(amount.strip())
-            sheet_name = sheet_name.strip()
-            description = description.strip()
+        # Handle ".recent <sheet_name> <count>" command
+        elif text.lower().startswith(".recent"):
+            parts = text.split()
+            if len(parts) != 3:
+                raise ValueError("Invalid .recent command format")
+
+            sheet_name = parts[1]
+            n = int(parts[2])  # Convert count to an integer
 
             # Open the specified sheet
             worksheet = client.open(file_name).worksheet(sheet_name)
 
+            # Get last N transactions
+            transactions = get_last_n_transactions(worksheet, n)
+
+            if not transactions:
+                msg = f"📂 No transactions found in '{sheet_name}'."
+            else:
+                msg = f"🔹 **Last {n} Transactions in '{sheet_name}':**\n"
+                for entry in reversed(transactions):  # Reverse for latest-first order
+                    date = (entry[0] if len(entry) > 0 else "-").ljust(12)  # Pad to 12 chars
+                    amount = (entry[1] if len(entry) > 1 else "-").ljust(12)  # Pad to 12 chars
+                    description = entry[2] if len(entry) > 2 else "-"  # No padding for description
+
+                    msg += f" {date} | {amount} | {description}\n"
+
+        # Handle normal expense logging
+        else:
+            parts = text.split(",")
+            if len(parts) != 3:
+                raise ValueError("Invalid input format")
+
+            sheet_name, amount, description = [p.strip() for p in parts]
+            amount = float(amount)  # Convert amount to float
+
+            print(f"Processing entry -> Sheet: {sheet_name}, Amount: {amount}, Desc: {description}")  # Debug log
+
+            # Open the specified sheet
+            worksheet = client.open(file_name).worksheet(sheet_name)
+
+            # Find the next available row in column B
+            next_row = get_last_row(worksheet)
+            print(f"Appending to row {next_row} in sheet {sheet_name}")  # Debug log
+
             # Append data with current date
             current_date = datetime.datetime.now(IST).strftime("%Y-%m-%d")
-            worksheet.append_row([current_date, amount, description])
+            worksheet.update(f"B{next_row}:D{next_row}", [[current_date, amount, description]])
 
-            msg = f"✅ Expense Logged: {amount} on {description} in '{sheet_name}'"
+            msg = f"✅ Expense Logged: {amount} on {description} in '{sheet_name}' at row {next_row}"
 
-        except gspread.exceptions.WorksheetNotFound:
-            msg = f"❌ Sheet '{sheet_name}' not found. Please check the name."
+    except gspread.exceptions.WorksheetNotFound:
+        msg = f"❌ Sheet '{sheet_name}' not found. Please check the name."
 
-        except ValueError:
-            msg = "❌ Invalid format. Please use: `sheet_name,amount,description`"
+    except ValueError:
+        msg = "❌ Invalid format. Please use: `.recent sheet_name count`"
 
-        except Exception as e:
-            msg = f"❌ Error: {str(e)}"
+    except Exception as e:
+        msg = f"❌ Error: {str(e)}"
 
     now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
-    print(f"{now}: {msg}")
+    print(f"{now}: {msg}")  # Debug log
 
     await update.message.reply_text(msg)
 
