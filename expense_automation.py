@@ -9,13 +9,12 @@ import pytz
 
 IST = pytz.timezone('Asia/Kolkata')
 
-SHEET_NAME = "Bank Transfers 2025"
+file_name = "Bank Transfers 2025"
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
          "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
 creds = ServiceAccountCredentials.from_json_keyfile_name("your_google_creds.json", scope)
 client = gspread.authorize(creds)
-sheet = client.open(SHEET_NAME).sheet1
 
 # Open and read the JSON file
 with open("other_creds.json", "r") as file:
@@ -29,26 +28,33 @@ BOT_TOKEN = other_creds['access_token_telegram_bot']
 async def log_expense(update: Update, context: CallbackContext) -> None:
     text = update.message.text
     try:
-        source, amount, category = text.split(",")
-        amount = float(amount)
-        
-        # Append data to Google Sheet
-        sheet.append_row([update.message.date.strftime("%Y-%m-%d"), source.strip(), amount, category.strip()])
-        
-        msg = f"✅ Expense Logged: {source} spent {amount} on {category}"
-        
-        now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
-        print(f"{now}: {msg}")
-        
-        await update.message.reply_text(msg)  # ✅ Await added
-    
-    except Exception:
-        msg = "❌ Invalid format. Please use: `source,amount,category`"
+        sheet_name, amount, description = text.split(",")
+        amount = float(amount.strip())
+        sheet_name = sheet_name.strip()
+        description = description.strip()
 
-        now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
-        print(f"{now}: {msg}")
+        # Open the specified sheet
+        worksheet = client.open(file_name).worksheet(sheet_name)
 
-        await update.message.reply_text(msg)  # ✅ Await added
+        # Append data with current date
+        current_date = datetime.datetime.now(IST).strftime("%Y-%m-%d")
+        worksheet.append_row([current_date, amount, description])
+
+        msg = f"✅ Expense Logged: {amount} on {description} in '{sheet_name}'"
+        
+    except gspread.exceptions.WorksheetNotFound:
+        msg = f"❌ Sheet '{sheet_name}' not found. Please check the name."
+
+    except ValueError:
+        msg = "❌ Invalid format. Please use: `sheet_name,amount,description`"
+
+    except Exception as e:
+        msg = f"❌ Error: {str(e)}"
+
+    now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{now}: {msg}")
+
+    await update.message.reply_text(msg)
 
 
 def main():
