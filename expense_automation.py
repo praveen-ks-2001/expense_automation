@@ -26,30 +26,45 @@ BOT_TOKEN = other_creds['access_token_telegram_bot']
 
 # Function to handle incoming messages
 async def log_expense(update: Update, context: CallbackContext) -> None:
-    text = update.message.text
-    try:
-        sheet_name, amount, description = text.split(",")
-        amount = float(amount.strip())
-        sheet_name = sheet_name.strip()
-        description = description.strip()
+    text = update.message.text.strip()
+    print(f"Text received: '{text}'")
 
-        # Open the specified sheet
-        worksheet = client.open(file_name).worksheet(sheet_name)
+    # If user sends '/sheet', return available sheet names
+    if text.lower() == ".sheet":
+        try:
+            sheet = client.open(file_name)
+            print(1)
+            sheet_names = [ws.title for ws in sheet.worksheets()]
+            print(2)
+            msg = "📄 Available Sheets:\n" + "\n".join(sheet_names)
+            print(3)
+        except Exception as e:
+            msg = f"❌ Error fetching sheets: {str(e)}"
 
-        # Append data with current date
-        current_date = datetime.datetime.now(IST).strftime("%Y-%m-%d")
-        worksheet.append_row([current_date, amount, description])
+    else:
+        try:
+            sheet_name, amount, description = text.split(",")
+            amount = float(amount.strip())
+            sheet_name = sheet_name.strip()
+            description = description.strip()
 
-        msg = f"✅ Expense Logged: {amount} on {description} in '{sheet_name}'"
-        
-    except gspread.exceptions.WorksheetNotFound:
-        msg = f"❌ Sheet '{sheet_name}' not found. Please check the name."
+            # Open the specified sheet
+            worksheet = client.open(file_name).worksheet(sheet_name)
 
-    except ValueError:
-        msg = "❌ Invalid format. Please use: `sheet_name,amount,description`"
+            # Append data with current date
+            current_date = datetime.datetime.now(IST).strftime("%Y-%m-%d")
+            worksheet.append_row([current_date, amount, description])
 
-    except Exception as e:
-        msg = f"❌ Error: {str(e)}"
+            msg = f"✅ Expense Logged: {amount} on {description} in '{sheet_name}'"
+
+        except gspread.exceptions.WorksheetNotFound:
+            msg = f"❌ Sheet '{sheet_name}' not found. Please check the name."
+
+        except ValueError:
+            msg = "❌ Invalid format. Please use: `sheet_name,amount,description`"
+
+        except Exception as e:
+            msg = f"❌ Error: {str(e)}"
 
     now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
     print(f"{now}: {msg}")
