@@ -107,6 +107,16 @@ async def handle_message(update: Update, context: CallbackContext):
         if text.lower() == ".sheet":
             await list_sheets(update)
 
+        elif text.lower() == ".info":
+            msg = (
+                "🤖 **Bot Commands:**\n"
+                "1️⃣ `.sheet` - List available sheets.\n"
+                "2️⃣ `.recent sheet_name [n]` - Show last `n` transactions (default: 5).\n"
+                "3️⃣ `.log sheet_name, amount, description` - Log a new transaction.\n"
+                "4️⃣ `.info` - Show this help message."
+            )
+            await send_message(update, msg)
+
         elif text.lower().startswith(".recent"):
             parts = text.split()
             if len(parts) < 2:
@@ -116,14 +126,17 @@ async def handle_message(update: Update, context: CallbackContext):
             n = int(parts[2]) if len(parts) == 3 else 5
             await get_recent_transactions(update, sheet_name, n)
 
-        else:
-            parts = text.split(",")
+        elif text.lower().startswith(".log"):
+            parts = text[4:].split(",")  # Remove `.log` and split the rest
             if len(parts) != 3:
-                raise ValueError("Invalid input format")
+                raise ValueError("Invalid .log command format. Use: `.log sheet_name, amount, description`")
 
             sheet_name, amount, description = [p.strip() for p in parts]
             amount = float(amount)
             await log_transaction(update, sheet_name, amount, description)
+
+        else:
+            raise ValueError("Invalid command. Use `.info` for available commands.")
 
     except ValueError as e:
         msg = f"❌ Error: {str(e)}"
