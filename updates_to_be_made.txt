@@ -2,6 +2,7 @@
 2. DONE: fix col from which to start appending data
 3. DONE: give '.sheet' to get all the sheets name
 4. DONE: fetch last 5 txn of the sheet
-5. add .info to tell how to use the bot
+5. DONE: .info to tell how to use the bot
 6. DONE: Fix date formatiing - not doing since formatting changes are minor and not imp
 7. DONE: add functionality for long msgs
+8. give option to either read creds or input on the go
