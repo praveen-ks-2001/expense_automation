@@ -117,7 +117,14 @@ async def log_expense(update: Update, context: CallbackContext) -> None:
     now = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
     print(f"{now}: {msg}")  # Debug log
 
-    await update.message.reply_text(msg)
+    # await update.message.reply_text(msg)
+    # Split the message into chunks of max 4096 characters
+    MAX_TELEGRAM_MSG_LENGTH = 4096
+    msg_parts = [msg[i:i+MAX_TELEGRAM_MSG_LENGTH] for i in range(0, len(msg), MAX_TELEGRAM_MSG_LENGTH)]
+
+    for part in msg_parts:
+        await update.message.reply_text(part)
+
 
 
 def main():
