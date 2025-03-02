@@ -83,6 +83,23 @@ async def list_sheets(update: Update):
     msg = "📄 **Available Sheets:**\n" + "\n".join(sheet_names)
     await send_message(update, msg)
 
+async def delete_last_transactions(update: Update, sheet_name: str, n: int):
+    """ Delete the last N transactions from a sheet. """
+    try:
+        worksheet = client.open(file_name).worksheet(sheet_name)
+        last_row = get_last_row(worksheet) - 1
+
+        if last_row < 2:
+            msg = f"📂 No transactions to delete in '{sheet_name}'."
+        else:
+            start_row = max(2, last_row - n + 1)
+            worksheet.batch_clear([f"B{start_row}:D{last_row}"])
+            msg = f"🗑️ Deleted last {n} transactions from '{sheet_name}'."
+
+    except gspread.exceptions.WorksheetNotFound:
+        msg = f"❌ Sheet '{sheet_name}' not found."
+
+    await send_message(update, msg)
 
 async def get_recent_transactions(update: Update, sheet_name: str, n: int = 5):
     """ Fetch and display recent transactions from a sheet. """
@@ -94,7 +111,7 @@ async def get_recent_transactions(update: Update, sheet_name: str, n: int = 5):
             msg = f"📂 No transactions found in '{sheet_name}'."
         else:
             msg = f"🔹 **Last {n} Transactions in '{sheet_name}':**\n"
-            for entry in reversed(transactions):
+            for entry in transactions:
                 date = entry[0] if len(entry) > 0 else "-"
                 amount = entry[1] if len(entry) > 1 else "-"
                 description = entry[2] if len(entry) > 2 else "-"
@@ -145,19 +162,20 @@ async def handle_message(update: Update, context: CallbackContext):
             msg = (
                 "🤖 **Bot Commands:**\n"
                 "1️⃣ `.sheet` - List available sheets.\n"
-                "2️⃣ `.recent sheet_name [n]` - Show last `n` transactions (default: 5).\n"
+                "2️⃣ `.recent sheet_name,n` - Show last `n` transactions (default: 5).\n"
                 "3️⃣ `.log sheet_name, amount, description` - Log a new transaction.\n"
-                "4️⃣ `.info` - Show this help message."
+                "4️⃣ `.delete sheet_name,n` - Delete last `n` transactions.\n"
+                "5️⃣ `.info` - Show this help message."
             )
             await send_message(update, msg)
-
+            
         elif text.lower().startswith(".recent"):
-            parts = text.split()
-            if len(parts) < 2:
-                raise ValueError("Invalid .recent command format")
+            parts = text[8:].split(",")  # Remove `.recent` and split the rest
+            if len(parts) < 1:
+                raise ValueError("Invalid .recent command format. Use: `.recent sheet_name,n`")
 
-            sheet_name = parts[1]
-            n = int(parts[2]) if len(parts) == 3 else 5
+            sheet_name = parts[0].strip()
+            n = int(parts[1].strip()) if len(parts) == 2 else 5
             await get_recent_transactions(update, sheet_name, n)
 
         elif text.lower().startswith(".log"):
@@ -168,6 +186,14 @@ async def handle_message(update: Update, context: CallbackContext):
             sheet_name, amount, description = [p.strip() for p in parts]
             amount = float(amount)
             await log_transaction(update, sheet_name, amount, description)
+
+        elif text.lower().startswith(".delete"):
+            parts = text[7:].split(",")  # Remove `.delete` and split the rest
+            if len(parts) != 2:
+                raise ValueError("Invalid .delete command format. Use: `.delete sheet_name,n`")
+
+            sheet_name, n = parts[0].strip(), int(parts[1].strip())
+            await delete_last_transactions(update, sheet_name, n)
 
         else:
             raise ValueError("Invalid command. Use `.info` for available commands.")

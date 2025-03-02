@@ -8,3 +8,4 @@
 8. DONE: give option to either read creds or input on the go
 9. DONE: Generate readme
 10. DONE: Upload sample sheet file
+11. DONE: Remove last [n] entry
