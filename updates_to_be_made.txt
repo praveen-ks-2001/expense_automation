@@ -5,4 +5,6 @@
 5. DONE: .info to tell how to use the bot
 6. DONE: Fix date formatiing - not doing since formatting changes are minor and not imp
 7. DONE: add functionality for long msgs
-8. give option to either read creds or input on the go
+8. DONE: give option to either read creds or input on the go
+9. DONE: Generate readme
+10. DONE: Upload sample sheet file
