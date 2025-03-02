@@ -7,6 +7,7 @@ This bot allows you to log and retrieve transactions from a Google Sheet via Tel
 - Log expenses directly from Telegram.
 - Retrieve the latest transactions from a sheet.
 - List available sheets in the Google Spreadsheet.
+- Delete transactions by ID.
 - Easy setup with Google and Telegram API credentials.
 
 ## 📌 Prerequisites
@@ -16,12 +17,12 @@ Before running this script, ensure you have:
 - Python 3.x installed.
 - A **Telegram Bot Token** from [BotFather](https://t.me/botfather).
 - A **Google Service Account** with access to Google Sheets.
-- The following Python libraries installed:
+- Required Python libraries listed in `requirements.txt`. Install them using:
   ```sh
-  pip install python-telegram-bot gspread oauth2client pytz
+  pip install -r requirements.txt
   ```
 
-## 🔧 Setup Instructions
+## 🛠 Setup Instructions
 
 ### 1️⃣ Set Up Google Sheets API Credentials
 
@@ -48,30 +49,30 @@ Before running this script, ensure you have:
 2. Name it (default: `Bank Transfers 2025`) or update the variable `file_name` in the script.
 3. See the sample sheet uploaded which works with the code. You can tweak the code for the format you require. [SampleSheet](https://docs.google.com/spreadsheets/d/1vaDPWdwSa7v4Mp1Hri7iRbngS6EOuDLsK6VLyCWXcNo/edit?usp=sharing)
 
-### 4️⃣ Run the Bot
+### 4️⃣ Install Dependencies & Run the Bot
 
 ```sh
+pip install -r requirements.txt
 python expense_automation.py
 ```
 
-## 📜 Commands
+## 📝 Commands
 
 | Command                                | Description                                                         |
 | -------------------------------------- | ------------------------------------------------------------------- |
 | `.sheet`                               | Lists available sheets in the Google Spreadsheet.                   |
-| `.recent sheet_name [n]`               | Retrieves the last `n` transactions (default: 5) from `sheet_name`. |
+| `.recent sheet_name, [n]`              | Retrieves the last `n` transactions (default: 5) from `sheet_name`. |
 | `.log sheet_name, amount, description` | Logs a new transaction in `sheet_name`.                             |
+| `.delete sheet_name, transaction_id`   | Deletes a transaction by its ID in `sheet_name`.                    |
 | `.info`                                | Shows a list of available commands.                                 |
 
 ## 🛠 Troubleshooting
 
 - **Google Sheets authentication failed?**
-
   - Ensure the service account has access to the sheet.
   - Make sure the correct JSON credentials file is used.
 
 - **Bot not responding?**
-
   - Check if the bot token is correct in `other_creds.json`.
   - Ensure your bot is running in a terminal.
 
@@ -82,4 +83,3 @@ Developed by **pk**
 ---
 
 Happy Tracking! 🚀
-
