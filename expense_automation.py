@@ -10,18 +10,52 @@ import pytz
 IST = pytz.timezone('Asia/Kolkata')
 
 file_name = "Bank Transfers 2025"
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name("your_google_creds.json", scope)
-client = gspread.authorize(creds)
+def load_google_credentials():
+    """ Load Google credentials from file if available, else ask for JSON input. """
+    try:
+        with open("your_google_creds.json", "r") as file:
+            creds_dict = json.load(file)
+        print("✅ Loaded Google credentials from google_creds.json.")
+    except FileNotFoundError:
+        creds_json = input("🔑 Paste your Google credentials JSON here: ")
+        creds_dict = json.loads(creds_json)  # Use input but don't save it
+        print("✅ Google credentials loaded (not saved).")
 
-# Open and read the JSON file
-with open("other_creds.json", "r") as file:
-    other_creds = json.load(file)
+    return creds_dict
 
-# Telegram Bot Token
-BOT_TOKEN = other_creds['access_token_telegram_bot']
+def authenticate_google_sheets():
+    """ Authenticate with Google Sheets using loaded credentials. """
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive"
+    ]
+
+    creds_dict = load_google_credentials()
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    client = gspread.authorize(creds)
+
+    print("✅ Google Sheets authentication successful!")
+    return client
+
+def load_telegram_token():
+    """ Load Telegram bot token from file if available, else ask for input. """
+    try:
+        with open("other_creds.json", "r") as file:
+            other_creds = json.load(file)
+        token = other_creds["access_token_telegram_bot"]
+        print("✅ Loaded Telegram bot token from other_creds.json.")
+    except FileNotFoundError:
+        token = input("🤖 Enter your Telegram bot token: ").strip()
+        print("✅ Telegram bot token loaded (not saved).")
+
+    return token
+
+# Example usage
+client = authenticate_google_sheets()
+BOT_TOKEN = load_telegram_token()
 
 
 def get_last_n_transactions(worksheet, n):
