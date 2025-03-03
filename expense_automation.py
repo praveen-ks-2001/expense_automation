@@ -130,6 +130,7 @@ async def log_transaction(update: Update, sheet_name: str, amount: float, descri
         next_row = get_last_row(worksheet)
 
         current_date = datetime.datetime.now(IST).strftime("%Y-%m-%d")
+
         worksheet.update(range_name=f"B{next_row}:D{next_row}", values=[[current_date, amount, description]])
 
         msg = f"✅ Expense Logged: {amount} on {description} in '{sheet_name}' at row {next_row}"
